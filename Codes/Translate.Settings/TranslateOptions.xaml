@@ -4,15 +4,15 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:Translate.Settings"
-             mc:Ignorable="d" SizeToContent="WidthAndHeight" Title="Translation Settings" ResizeMode="CanMinimize"  WindowStartupLocation="CenterScreen">
+             mc:Ignorable="d" SizeToContent="WidthAndHeight" Title="Translation Settings" ResizeMode="CanMinimize"  WindowStartupLocation="CenterScreen" d:DesignHeight="543.311">
 
     <Grid Name="grid">
         <Grid.Resources>
             <local:EnumBooleanConverter x:Key="enumBooleanConverter" />
         </Grid.Resources>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"></RowDefinition>
-            <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition Height="Auto" MinHeight="477"></RowDefinition>
+            <RowDefinition Height="Auto" MinHeight="30"></RowDefinition>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"></ColumnDefinition>
@@ -76,8 +76,37 @@
                     </WrapPanel>
                 </DockPanel>
             </GroupBox>
+            
+            <GroupBox x:Name="gbAutoTtsSettings" Header="" Margin="20,5" VerticalAlignment="Top" Padding="15,3,15,3">
+                <DockPanel Width="330">
+                    <WrapPanel Margin="5" DockPanel.Dock="Top">
+                        <TextBlock VerticalAlignment="Center" MinWidth="50"><Run Text="TTS"/></TextBlock>
+                        <CheckBox x:Name="cbAutoTts" IsChecked="{Binding TextToSpeechWhenTranslate, Mode=TwoWay}" Margin="20,0,0,0" Content="Auto TTS (Limit 7 words (Space Split))" />
+                    </WrapPanel>
+
+                </DockPanel>
+            </GroupBox>
         </StackPanel>
         <DockPanel Grid.Row="0" Grid.Column="1">
+            <GroupBox x:Name="gbBingSettings" Header="Bing Translate Settings" HorizontalAlignment="Left" Margin="20,5,20,5" VerticalAlignment="Top" Padding="15,3,15,3"  DockPanel.Dock="Top">
+                <DockPanel>
+                    <WrapPanel Margin="5" DockPanel.Dock="Top" Width="311">
+                        <TextBlock VerticalAlignment="Center" MinWidth="100">Subscription-Key</TextBlock>
+                        <TextBox Name="txtBingAppkey" Width="191" Margin="20,0,0,0" Text="{Binding Path=BingSettings.AppClient.AppKey, Mode=TwoWay}"></TextBox>
+                    </WrapPanel>
+                    <WrapPanel Margin="5" DockPanel.Dock="Top">
+                        <TextBlock VerticalAlignment="Top" MinWidth="100">Subscription-Region</TextBlock>
+                        <TextBox Name="txtBingClientSecret" Width="181" Margin="20,0,0,0" Height="19" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Text="{Binding Path=BingSettings.AppClient.ClientSecret, Mode=TwoWay}"></TextBox>
+                    </WrapPanel>
+                    <WrapPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <TextBlock VerticalAlignment="Center" HorizontalAlignment="Right" Margin="3" Padding="3">
+                            <Hyperlink Name="lblBing" Click="lblBing_OnClick">
+                                <Run Text="You can click me to get it"></Run>
+                            </Hyperlink>
+                        </TextBlock>
+                    </WrapPanel>
+                </DockPanel>
+            </GroupBox>
             <GroupBox x:Name="gbBaiduSettings" Header="Baidu Translate Settings" HorizontalAlignment="Left" Margin="20,5,20,5" VerticalAlignment="Top" Padding="15,3,15,3" DockPanel.Dock="Top">
                 <DockPanel>
                     <WrapPanel Margin="5" DockPanel.Dock="Top">
@@ -115,15 +144,6 @@
                         <TextBlock VerticalAlignment="Center" MinWidth="100">Show Type</TextBlock>
                         <CheckBox Name="cbTranslateResultModal" Checked="CbTranslateResultModal_OnChecked"  Unchecked="cbAutoTranslate_Checked" IsChecked="{Binding Path=TranslateResultShowType,Mode=TwoWay,Converter={StaticResource enumBooleanConverter},ConverterParameter=Modal}" Margin="20,0,0,0" >Modal</CheckBox>
                         <CheckBox Name="cbTranslateResultOutput" Checked="CbTranslateResultOutput_OnChecked"  Unchecked="cbAutoTranslate_Checked" IsChecked="{Binding Path=TranslateResultShowType,Mode=TwoWay,Converter={StaticResource enumBooleanConverter},ConverterParameter=Output}" Margin="20,0,0,0" >Output</CheckBox>
-                    </WrapPanel>
-
-                </DockPanel>
-            </GroupBox>
-            <GroupBox x:Name="gbAutoTtsSettings" Header="" HorizontalAlignment="Left" Margin="20,5,0,5" VerticalAlignment="Top" Padding="15,3,15,3" DockPanel.Dock="Top">
-                <DockPanel Width="330">
-                    <WrapPanel Margin="5" DockPanel.Dock="Top">
-                        <TextBlock VerticalAlignment="Center" MinWidth="50">TTS</TextBlock>
-                        <CheckBox Name="cbAutoTts" IsChecked="{Binding Path=TextToSpeechWhenTranslate,Mode=TwoWay}" Margin="20,0,0,0" >Auto TTS (Limit 7 words (Space Split))</CheckBox>
                     </WrapPanel>
 
                 </DockPanel>
