@@ -13,13 +13,13 @@ namespace VsTranslatorTest
         
         //VsTranslator  
         //SVJTxigXb3ezDDm6ZG5hn/FC20YUbV37clW3zw8hLLE=
-        readonly ITranslator _bingTranslator = new BingTranslator();
+        readonly ITranslator _bingTranslator = new BingTranslator("92464a22da804f84b9ee14b41f836eaf", "global");
         [TestMethod]
         public void Translate()
         {
             string sourceText = "TDD completely turns traditional development around.";
             TranslationResult transResult = _bingTranslator.Translate(sourceText, "en", "zh-CHS");
-            Assert.AreEqual("TDD 完全扭转了传统的发展。", transResult.TargetText);
+            Assert.AreEqual("TDD 完全扭转了传统发展。", transResult.TargetText);
 
 
             sourceText = "你今天过得好不好";

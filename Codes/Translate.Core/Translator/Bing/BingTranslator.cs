@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.Text;
@@ -21,6 +22,10 @@ namespace Translate.Core.Translator.Bing
 {
     public class BingTranslator : ITranslator
     {
+        private static string subscriptionKey;
+        private static readonly string endpoint = "https://api.cognitive.microsofttranslator.com/";
+        private static string location;
+
         private static AdmAccessToken _admToken;
         private static BingAdmAuth _admAuth;
 
@@ -29,7 +34,7 @@ namespace Translate.Core.Translator.Bing
 
         public BingTranslator()
         {
-            InitCookie();
+            //InitCookie();
         }
 
 
@@ -42,7 +47,11 @@ namespace Translate.Core.Translator.Bing
             {
                 throw new Exception("app id and client secret is necessary");
             }
-            _admAuth = new BingAdmAuth(clientId, clientSecret);
+            subscriptionKey = clientId;
+            location = clientSecret;
+
+
+            //_admAuth = new BingAdmAuth(clientId, clientSecret);
         }
 
         static BingTranslator()
@@ -128,40 +137,73 @@ namespace Translate.Core.Translator.Bing
         /// <returns></returns>
         private string TranslateByHttp(string text, string from = "en", string to = "zh-CHS")
         {
+
             try
             {
                 //var sw = Stopwatch.StartNew();
-                var authToken = GetAuthToken();
-                string uri = "http://api.microsofttranslator.com/v2/Http.svc/Translate?text=" + HttpUtility.UrlEncode(text) + "&from=" + from + "&to=" + to;
-                HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(uri);
-                httpWebRequest.Headers.Add("Authorization", authToken);
-                WebResponse response = null;
-                try
+                var texts = text.Split(new[] { "\r\n" }, StringSplitOptions.None);
+                var transParams = texts.Select(t => new BingPostTransParams() { Text = t }).ToList();
+                StartTrans: var uri = $"{endpoint}translate?api-version=3.0&from={from}&to={to}";
+                var formData = JsonConvert.SerializeObject(transParams.Where(t => !string.IsNullOrWhiteSpace(t.Text)));
+
+
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls12;
+                HttpClient client = new HttpClient();
+                HttpRequestMessage requestMessage = new HttpRequestMessage(HttpMethod.Post, uri);
+                requestMessage.Content = new StringContent(formData, Encoding.UTF8, "application/json");
+                requestMessage.Headers.Add("Ocp-Apim-Subscription-Key", subscriptionKey);
+                requestMessage.Headers.Add("Ocp-Apim-Subscription-Region", location);
+                HttpResponseMessage response = client.SendAsync(requestMessage).GetAwaiter().GetResult();
+
+                if (response.StatusCode.ToString() == "OK")
                 {
-                    response = httpWebRequest.GetResponse();
-                    using (Stream stream = response.GetResponseStream())
+                    string r = response.Content.ReadAsStringAsync().Result.ToString();
+
+                    var result = JsonConvert.DeserializeObject<List<BingPostTransResult>>(r).FirstOrDefault();
+                    if (result != null)
                     {
-                        if (stream == null)
-                        {
-                            return string.Empty;
-                        }
-                        DataContractSerializer dcs = new DataContractSerializer(typeof(String));
-                        string translation = (string)dcs.ReadObject(stream);
-
-                        Console.WriteLine("Bing translation for source text '{0}' from {1} to {2} is", text, from, to);
-                        Console.WriteLine(translation);
-
-                        return translation;
+                        return result.Translations.FirstOrDefault().From;
                     }
+                    return "";
+
                 }
-                catch
-                {
-                    throw;
-                }
-                finally
-                {
-                    response?.Close();
-                }
+
+
+
+
+
+
+                //var authToken = GetAuthToken();
+                //string uri = "http://api.microsofttranslator.com/v2/Http.svc/Translate?text=" + HttpUtility.UrlEncode(text) + "&from=" + from + "&to=" + to;
+                //HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(uri);
+                //httpWebRequest.Headers.Add("Authorization", authToken);
+                //WebResponse response = null;
+                //try
+                //{
+                //    response = httpWebRequest.GetResponse();
+                //    using (Stream stream = response.GetResponseStream())
+                //    {
+                //        if (stream == null)
+                //        {
+                //            return string.Empty;
+                //        }
+                //        DataContractSerializer dcs = new DataContractSerializer(typeof(String));
+                //        string translation = (string)dcs.ReadObject(stream);
+
+                //        Console.WriteLine("Bing translation for source text '{0}' from {1} to {2} is", text, from, to);
+                //        Console.WriteLine(translation);
+
+                //        return translation;
+                //    }
+                //}
+                //catch
+                //{
+                //    throw;
+                //}
+                //finally
+                //{
+                //    response?.Close();
+                //}
             }
             catch (WebException e)
             {
@@ -243,7 +285,7 @@ namespace Translate.Core.Translator.Bing
         #endregion
 
         #region post
-        private BingPostTransResult TranslateByPost(string text, string from = "-", string to = "zh-CHS")
+        private BingPostTransResult TranslateByPost(string text, string from = "-", string to = "zh-CHT")
         {
             var texts = text.Split(new[] { "\r\n" }, StringSplitOptions.None);
             var transParams = texts.Select(t => new BingPostTransParams() { Text = t }).ToList();
@@ -275,7 +317,7 @@ namespace Translate.Core.Translator.Bing
         /// <param name="from"></param>
         /// <param name="to"></param>
         /// <returns></returns>
-        private BingPostTransResult TranslateByPost(List<BingPostTransParams> text, string from = "-", string to = "zh-CHS")
+        private BingPostTransResult TranslateByPost(List<BingPostTransParams> text, string from = "-", string to = "zh-CHT")
         {
             //https://www.bing.com/translator/api/Translate/TranslateArray?from=-&to=zh-CHS
 
@@ -287,8 +329,8 @@ namespace Translate.Core.Translator.Bing
             var tryCount = 0;
             try
             {
-                StartTrans: var uri = $"https://www.bing.com/translator/api/Translate/TranslateArray?from={from}&to={to}";
-                var formData = JsonConvert.SerializeObject(text.Where(t=>!string.IsNullOrWhiteSpace(t.Text)));
+            StartTrans: var uri = $"https://www.bing.com/translator/api/Translate/TranslateArray?from={from}&to={to}";
+                var formData = JsonConvert.SerializeObject(text.Where(t => !string.IsNullOrWhiteSpace(t.Text)));
 
                 HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(uri);
                 httpWebRequest.ContentType = "application/json; charset=utf-8";
@@ -433,18 +475,19 @@ namespace Translate.Core.Translator.Bing
                     #endregion
 
                     #region http
-                    //result.TargetText = TranslateByHttp(text, from, to); 
+                    result.TargetText = TranslateByHttp(text, from, to);
                     #endregion
 
                     #region post
 
-                    var bingTransResult = TranslateByPost(text, from, to);
-                    result.SourceLanguage = bingTransResult?.From;
-                    foreach (var item in bingTransResult?.Items ?? new List<BingPostTransResultItem>())
-                    {
-                        result.TargetText += item.Text + "\r\n";
-                    }
-                    result.TargetText = result.TargetText.TrimEnd();
+                    //var bingTransResult = TranslateByPost(text, from, to);
+
+                    //result.SourceLanguage = bingTransResult?.From;
+                    //foreach (var item in bingTransResult?.Items ?? new List<BingPostTransResultItem>())
+                    //{
+                    //    result.TargetText += item.Text + "\r\n";
+                    //}
+                    //result.TargetText = result.TargetText.TrimEnd();
 
                     #endregion
                 }
